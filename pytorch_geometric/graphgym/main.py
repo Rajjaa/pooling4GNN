@@ -10,21 +10,27 @@ from torch_geometric.graphgym.config import (
     cfg,
     dump_cfg,
     load_cfg,
+    set_cfg,
     set_out_dir,
     set_run_dir,
 )
-from torch_geometric.graphgym.loader import GraphGymDataModule
 from torch_geometric.graphgym.logger import set_printing
-from torch_geometric.graphgym.model_builder import create_model
-from torch_geometric.graphgym.train import train
+import torch_geometric.graphgym.register as register
+from torch_geometric.graphgym.train import train as train
 from torch_geometric.graphgym.utils.agg_runs import agg_runs
 from torch_geometric.graphgym.utils.comp_budget import params_count
 from torch_geometric.graphgym.utils.device import auto_select_device
+from custom_graphgym.utils.pl_trainer import config_trainer
+
+GraphGymDataModule = register.train_dict['datamodule']
+create_model = register.network_dict['create_model']
+
 
 if __name__ == '__main__':
     # Load cmd line args
     args = parse_args()
     # Load config file
+    set_cfg(cfg)
     load_cfg(cfg, args)
     set_out_dir(cfg.out_dir, args.cfg_file)
     # Set Pytorch environment
@@ -46,7 +52,8 @@ if __name__ == '__main__':
         logging.info(cfg)
         cfg.params = params_count(model)
         logging.info('Num parameters: %s', cfg.params)
-        train(model, datamodule, logger=True)
+        trainer_config = config_trainer(cfg)
+        train(model, datamodule, logger=True, trainer_config=trainer_config)
 
     # Aggregate results from different seeds
     agg_runs(cfg.out_dir, cfg.metric_best)

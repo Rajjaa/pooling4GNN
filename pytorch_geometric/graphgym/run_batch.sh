@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CONFIG=example_node
+CONFIG=example_graph
 GRID=example
 REPEAT=3
 MAX_JOBS=8
