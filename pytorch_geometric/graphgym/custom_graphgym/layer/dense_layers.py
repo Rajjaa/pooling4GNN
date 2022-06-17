@@ -17,7 +17,11 @@ class DenseGCNConv(nn.Module):
         self.model = pyg.nn.DenseGCNConv(layer_config.dim_in, layer_config.dim_out,
                                     bias=layer_config.has_bias)
 
-    def forward(self, batch, add_loop=True, mask=None):
+    def forward(self, batch, add_loop=True):
+        if hasattr(batch, 'mask'):
+            mask = batch.mask
+        else:
+            mask = None
         batch.x = self.model(batch.x, batch.adj, mask=mask, add_loop=add_loop)
         return batch
 
@@ -32,7 +36,11 @@ class DenseSAGEConv(nn.Module):
         self.model = pyg.nn.DenseSAGEConv(layer_config.dim_in, layer_config.dim_out,
                                      bias=layer_config.has_bias)
 
-    def forward(self, batch, mask=None):
+    def forward(self, batch):
+        if hasattr(batch, 'mask'):
+            mask = batch.mask
+        else:
+            mask = None
         batch.x = self.model(batch.x, batch.adj, mask)
         return batch
 
@@ -49,6 +57,10 @@ class DenseGraphConv(nn.Module):
             bias=layer_config.has_bias, aggr=cfg.gnn.agg, **kwargs
         )
 
-    def forward(self, batch, mask=None):
+    def forward(self, batch):
+        if hasattr(batch, 'mask'):
+            mask = batch.mask
+        else:
+            mask = None
         batch.x = self.model(batch.x, batch.adj, mask)
         return batch
