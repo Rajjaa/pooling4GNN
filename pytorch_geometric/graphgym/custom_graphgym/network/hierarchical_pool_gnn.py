@@ -1,4 +1,4 @@
-import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Linear
 
@@ -9,7 +9,7 @@ from torch_geometric.graphgym.models.gnn import FeatureEncoder, GNNPreMP
 from torch_geometric.graphgym.register import register_network
 
 @register_network('hpoolgnn')
-class HPoolGNN(torch.nn.Module):
+class HPoolGNN(nn.Module):
     """
     GNN module for graph classification: encoder + stage + global pooling + head
 
@@ -32,14 +32,13 @@ class HPoolGNN(torch.nn.Module):
                                    cfg.gnn.layers_pre_mp)
             dim_in = cfg.gnn.dim_inner
 
-        # Message passing layers interweaved with pooling layers and a flat pooling layer at the end
+        # Message passing layers interweaved with pooling layers
         GNNStage = register.stage_dict[cfg.gnn.stage_type]
-        if cfg.gnn.layers_mp > 0:
-            self.mp = GNNStage(dim_in=dim_in, dim_out=cfg.gnn.dim_inner,
-                               num_layers=cfg.gnn.layers_mp)
+        self.mp = GNNStage(dim_in=dim_in, dim_out=cfg.gnn.dim_inner,
+                            num_blocks=cfg.gnn.layers_mp)
 
         # Classification head (MLP)
-        GNNHead = register.head_dict[cfg.gnn.head]
+        GNNHead = register.head_dict['hpool_head']
         self.head = GNNHead(dim_in=cfg.gnn.dim_inner, dim_out=dim_out)
 
         self.apply(init_weights)
