@@ -7,3 +7,4 @@
 # python main.py --cfg configs/pyg/global_attention.yaml --repeat 2 # graph classification with global pooling
 # python main.py --cfg configs/pyg/sort_pool.yaml --repeat 1 # graph classification with global pooling
 python main.py --cfg configs/pyg/mincutpool.yaml --repeat 1 # graph classification with global pooling
+# python main.py --cfg configs/pyg/diffpool.yaml --repeat 1 # graph classification with global pooling
