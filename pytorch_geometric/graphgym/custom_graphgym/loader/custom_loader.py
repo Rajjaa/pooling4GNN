@@ -14,7 +14,9 @@ from torch_geometric.datasets import (
     Planetoid,
     QM7b,
     TUDataset,
-    MoleculeNet
+    GNNBenchmarkDataset,
+    MoleculeNet,
+    ZINC
 )
 from torch_geometric.graphgym.config import cfg
 from torch_geometric.graphgym.models.transform import (
@@ -76,6 +78,7 @@ def load_pyg(name, dataset_dir):
 
     """
     dataset_dir = '{}/{}'.format(dataset_dir, name)
+    custom_splits = False # update with True if PyG provides the splits
     if name in ['Cora', 'CiteSeer', 'PubMed']:
         dataset = Planetoid(dataset_dir, name)
     elif name[:3] == 'TU_':
@@ -105,10 +108,20 @@ def load_pyg(name, dataset_dir):
         dataset = QM7b(dataset_dir)
     elif name == 'HIV':
         dataset = MoleculeNet(dataset_dir, name)
+    elif name in ['PATTERN', 'CLUSTER', 'CIFAR10', 'TSP']:
+        dataset = {}
+        for split in ['train', 'val', 'test']:
+            dataset[split] = GNNBenchmarkDataset(dataset_dir, name, split=split)
+        custom_splits = True
+    elif name == 'ZINC':
+        dataset = {}
+        for split in ['train', 'val', 'test']:
+            dataset[split] = ZINC(dataset_dir, name, split=split, subset=cfg.dataset.subset)
+        custom_splits = True
     else:
         raise ValueError('{} not support'.format(name))
 
-    if cfg.dataset.split_mode == 'random':
+    if cfg.dataset.split_mode == 'random' and not custom_splits:
         dataset = split_pyg_dataset(dataset)
     return dataset
 
@@ -211,7 +224,12 @@ def load_dataset():
         raise ValueError('Unknown data format: {}'.format(format))
 
     if cfg.dataset.task == 'graph':
-        max_num_nodes = max([graph.num_nodes for graph in dataset])
+        # set the max_num_nodes while loading the dataset for graph classif tasks
+        # this value is needed by some of the pooling operators
+        if isinstance(dataset, dict):
+            max_num_nodes = max([graph.num_nodes for graph in dataset['train']])
+        else:
+            max_num_nodes = max([graph.num_nodes for graph in dataset])
         cfg.dataset.max_num_nodes = max_num_nodes
     return dataset
 
@@ -227,12 +245,18 @@ def set_dataset_info(dataset):
 
     # get dim_in and dim_out
     try:
-        cfg.share.dim_in = dataset.data.x.shape[1]
+        if isinstance(dataset, dict):
+            cfg.share.dim_in = dataset['train'].data.x.shape[1]
+        else:
+            cfg.share.dim_in = dataset.data.x.shape[1]
     except Exception:
         cfg.share.dim_in = 1
     try:
         if cfg.dataset.task_type == 'classification':
-            cfg.share.dim_out = torch.unique(dataset.data.y).shape[0]
+            if isinstance(dataset, dict):
+                cfg.share.dim_out = torch.unique(dataset['train'].data.y).shape[0]
+            else:
+                cfg.share.dim_out = torch.unique(dataset.data.y).shape[0]
         else:
             cfg.share.dim_out = dataset.data.y.shape[1]
     except Exception:
@@ -240,14 +264,24 @@ def set_dataset_info(dataset):
 
     # count number of dataset splits
     cfg.share.num_splits = 1
-    for key in dataset.data.keys:
-        if 'val' in key:
-            cfg.share.num_splits += 1
-            break
-    for key in dataset.data.keys:
-        if 'test' in key:
-            cfg.share.num_splits += 1
-            break
+    if isinstance(dataset, dict):
+        for key in dataset:
+            if 'val' in key:
+                cfg.share.num_splits += 1
+                break
+        for key in dataset:
+            if 'test' in key:
+                cfg.share.num_splits += 1
+                break
+    else:
+        for key in dataset.data.keys:
+            if 'val' in key:
+                cfg.share.num_splits += 1
+                break
+        for key in dataset.data.keys:
+            if 'test' in key:
+                cfg.share.num_splits += 1
+                break
 
 
 def create_dataset():
@@ -330,12 +364,18 @@ def create_loader():
     dataset = create_dataset()
     # train loader
     if cfg.dataset.task == 'graph':
-        id = dataset.data['train_graph_index']
-        loaders = [
-            get_loader(dataset[id], cfg.train.sampler, cfg.train.batch_size,
-                       shuffle=True)
-        ]
-        delattr(dataset.data, 'train_graph_index')
+        if 'train' in dataset:
+            loaders = [
+                    get_loader(dataset['train'], cfg.train.sampler, cfg.train.batch_size,
+                            shuffle=True)
+                ]
+        elif 'train_graph_index' in dataset.data:
+            id = dataset.data['train_graph_index']
+            loaders = [
+                get_loader(dataset[id], cfg.train.sampler, cfg.train.batch_size,
+                        shuffle=True)
+            ]
+            delattr(dataset.data, 'train_graph_index')
     else:
         loaders = [
             get_loader(dataset, cfg.train.sampler, cfg.train.batch_size,
@@ -345,12 +385,19 @@ def create_loader():
     # val and test loaders
     for i in range(cfg.share.num_splits - 1):
         if cfg.dataset.task == 'graph':
-            split_names = ['val_graph_index', 'test_graph_index']
-            id = dataset.data[split_names[i]]
-            loaders.append(
-                get_loader(dataset[id], cfg.val.sampler, cfg.train.batch_size,
-                           shuffle=False))
-            delattr(dataset.data, split_names[i])
+            split_names = ['val', 'test']
+            if split_names[i] not in dataset:
+                id = dataset.data[f'{split_names[i]}_graph_index']
+                loaders.append(
+                    get_loader(dataset[id], cfg.val.sampler, cfg.train.batch_size,
+                            shuffle=False))
+                delattr(dataset.data, f'{split_names[i]}_graph_index')
+            else:
+                id = split_names[i]
+                loaders.append(
+                    get_loader(dataset[id], cfg.val.sampler, cfg.train.batch_size,
+                            shuffle=False))
+                
         else:
             loaders.append(
                 get_loader(dataset, cfg.val.sampler, cfg.train.batch_size,
