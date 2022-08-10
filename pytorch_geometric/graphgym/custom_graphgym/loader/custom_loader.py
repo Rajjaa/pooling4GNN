@@ -121,7 +121,7 @@ def load_pyg(name, dataset_dir):
     else:
         raise ValueError('{} not support'.format(name))
 
-    if cfg.dataset.split_mode == 'random' and not custom_splits:
+    if cfg.dataset.task == 'graph' and not custom_splits:
         dataset = split_pyg_dataset(dataset)
     return dataset
 
