@@ -35,7 +35,7 @@ class HPoolGNN(nn.Module):
         # Message passing layers interweaved with pooling layers
         GNNStage = register.stage_dict[cfg.gnn.stage_type]
         self.mp = GNNStage(dim_in=dim_in, dim_out=cfg.gnn.dim_inner,
-                            num_blocks=cfg.gnn.layers_mp)
+                            num_blocks=cfg.hierarchical_pooling.num_blocks)
 
         # Classification head (MLP)
         GNNHead = register.head_dict['hpool_head']

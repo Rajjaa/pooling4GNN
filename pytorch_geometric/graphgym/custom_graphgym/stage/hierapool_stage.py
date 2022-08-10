@@ -38,7 +38,7 @@ class HieraPoolStage(nn.Module):
             no_new_nodes = ceil(pool_ratio * no_new_nodes)
             if self.post_pool:
                 post_pool_block = PostPoolBlock(dim_out, dim_out,
-                 cfg.hierarchical_pooling.num_post_pool_layers, dense=True)
+                 cfg.hierarchical_pooling.num_post_pool_layers, final_act=False, dense=True)
                 self.add_module(f'post_pool_block{i}', post_pool_block)
 
 
