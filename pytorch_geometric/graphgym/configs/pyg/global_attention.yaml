@@ -2,7 +2,7 @@ out_dir: results
 num_workers: 3
 dataset:
   format: PyG
-  name: TU_MUTAG
+  name: TU_NCI1
   task: graph
   task_type: classification
   node_encoder: false
@@ -39,4 +39,4 @@ mlp_head:
 optim:
   optimizer: adam
   base_lr: 0.01
-  max_epoch: 100
+  max_epoch: 5
