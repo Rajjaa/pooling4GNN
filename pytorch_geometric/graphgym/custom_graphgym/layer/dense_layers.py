@@ -14,8 +14,10 @@ class DenseGCNConv(nn.Module):
     """
     def __init__(self, layer_config: LayerConfig, **kwargs):
         super().__init__()
-        self.model = pyg.nn.DenseGCNConv(layer_config.dim_in, layer_config.dim_out,
-                                    bias=layer_config.has_bias)
+        self.model = pyg.nn.dense.DenseGCNConv(
+            layer_config.dim_in, layer_config.dim_out,
+            bias=layer_config.has_bias
+            )
 
     def forward(self, batch, add_loop=True):
         if hasattr(batch, 'mask'):
@@ -33,8 +35,10 @@ class DenseSAGEConv(nn.Module):
     """
     def __init__(self, layer_config: LayerConfig, **kwargs):
         super().__init__()
-        self.model = pyg.nn.DenseSAGEConv(layer_config.dim_in, layer_config.dim_out,
-                                     bias=layer_config.has_bias)
+        self.model = pyg.nn.dense.DenseSAGEConv(
+            layer_config.dim_in, layer_config.dim_out,
+            bias=layer_config.has_bias,
+            normalize=cfg.gnn.l2norm)
 
     def forward(self, batch):
         if hasattr(batch, 'mask'):
@@ -52,7 +56,7 @@ class DenseGraphConv(nn.Module):
     """
     def __init__(self, layer_config: LayerConfig, **kwargs):
         super().__init__()
-        self.model = pyg.nn.DenseGraphConv(
+        self.model = pyg.nn.dense.DenseGraphConv(
             layer_config.dim_in, layer_config.dim_out,
             bias=layer_config.has_bias, aggr=cfg.gnn.agg, **kwargs
         )

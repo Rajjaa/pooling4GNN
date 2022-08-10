@@ -10,7 +10,7 @@ from torch_geometric.graphgym.models.layer import (
 from torch_geometric.graphgym.register import register_layer
 
 @register_layer('gnn_layer')
-def GNNLayer(dim_in, dim_out, has_act=True, dense=False):
+def GNNLayer(dim_in, dim_out, has_act=True, dense=False, has_bn=cfg.gnn.batchnorm):
     """
     Wrapper for a GNN layer
     It extends the wrapper of GraphGym by adding the dense parameter
@@ -22,10 +22,12 @@ def GNNLayer(dim_in, dim_out, has_act=True, dense=False):
         dense (bool): Whether to use the dense version of the layer
     """
     layer_type = f'dense_{cfg.gnn.layer_type}' if dense else cfg.gnn.layer_type
+    layer_config = new_layer_config(dim_in, dim_out, 1, has_act=has_act,
+                                      has_bias=False, cfg=cfg)
+    layer_config.has_batchnorm = has_bn
     return GeneralLayer(
         layer_type,
-        layer_config=new_layer_config(dim_in, dim_out, 1, has_act=has_act,
-                                      has_bias=False, cfg=cfg))
+        layer_config=layer_config)
 
 
 @register_layer('gnn_dense_block')
@@ -37,7 +39,8 @@ class GNNBlock(nn.Module):
         for i in range(num_layers):
             d_in = dim_in if i == 0 else dim_out
             has_act = i!=num_layers-1 or final_act
-            gnn_layer = GNNLayer(d_in, dim_out, dense=dense, has_act=has_act)
+            has_bn = i!=num_layers-1 and cfg.gnn.batchnorm
+            gnn_layer = GNNLayer(d_in, dim_out, dense=dense, has_act=has_act, has_bn=has_bn)
             self.add_module(f'gnn_layer{i}', gnn_layer)
 
     
