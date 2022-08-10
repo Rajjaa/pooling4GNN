@@ -66,6 +66,10 @@ def split_pyg_dataset(dataset):
     set_dataset_attr(dataset, 'test_graph_index', torch.tensor(test_idx), test_size)
     return dataset
 
+def to_float32(data):
+    data.x = data.x.type(torch.float32)
+    return data
+
 def load_pyg(name, dataset_dir):
     """
     Load PyG dataset objects. (More PyG datasets will be supported)
@@ -107,7 +111,7 @@ def load_pyg(name, dataset_dir):
     elif name == 'QM7b':
         dataset = QM7b(dataset_dir)
     elif name == 'HIV':
-        dataset = MoleculeNet(dataset_dir, name)
+        dataset = MoleculeNet(dataset_dir, name, pre_transform=to_float32)
     elif name in ['PATTERN', 'CLUSTER', 'CIFAR10', 'TSP']:
         dataset = {}
         for split in ['train', 'val', 'test']:
