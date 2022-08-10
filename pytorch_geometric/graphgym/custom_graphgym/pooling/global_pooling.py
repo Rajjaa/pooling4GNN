@@ -26,7 +26,7 @@ class Set2SetPool(torch.nn.Module):
         self.post_pool = PostPool(
             LayerConfig(
                 dim_in = 2 * dim_in, dim_out = dim_out, 
-                has_l2norm=False, dropout=cfg.global_pooling.dropout, has_act=True,
+                has_l2norm=False, dropout=cfg.gnn.dropout, has_act=True,
                 has_bias=True
             )
         )
