@@ -48,8 +48,9 @@ class DiffPoolBlock(nn.Module):
         batch.x = x_pool
         batch.adj = adj_pool
         batch.mask = None
-        batch.aux_loss['l'] += l
-        batch.aux_loss['e'] += e
+        if cfg.diffpool.linkpred:
+            batch.aux_loss['l'] += l
+            batch.aux_loss['e'] += e
         return batch
 
 

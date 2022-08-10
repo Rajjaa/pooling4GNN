@@ -40,6 +40,7 @@ def set_cfg_pooling(cfg):
     # ----------------------------------------------------------------------- #
 
     cfg.hierarchical_pooling = CN()
+    cfg.hierarchical_pooling.num_blocks = 2
     cfg.hierarchical_pooling.pool_ratio = 0.5
     cfg.hierarchical_pooling.type = 'mincutpool'
     cfg.hierarchical_pooling.flat_pooling = 'mean'
@@ -53,6 +54,7 @@ def set_cfg_pooling(cfg):
     cfg.diffpool.num_blocks = 1
     cfg.diffpool.num_block_pooling_layers = 1
     cfg.diffpool.num_block_mp_layers = 1
+    cfg.diffpool.linkpred = True
 
     # ----------------------------------------------------------------------- #
     # MincutPool options
